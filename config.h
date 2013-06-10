@@ -1,25 +1,33 @@
 #include <X11/XF86keysym.h>
 
 /* appearance */
-static const char font[]            = "WenQuanYi Micro Hei for Powerline-12";
-//static const char font[]            = "Pragmata-12";
+//static const char font[]            = "WenQuanYi Micro Hei for Powerline-10";
+static const char font[]            = "Pragmata TT for Powerline-10";
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const Bool showbar           = True;     /* False means no bar */
 static const Bool topbar            = True;     /* False means bottom bar */
-#define SEP "\u2B82"
+#define SEP_NORMAL_L "\u2B82"
+#define SEP_HOLLOW_L "\u2B83"
 
 #define CYAN  "#1793D0"
 #define DBLUE "#31658c"
 #define ACTIVE "#EF6800"
 
-#define BLACK "#101010"
+//GRAYSCALE
+//#define GRAY2 "#303030"
+#define GRAY2 DGRAY
+#define GRAY4 "#5a5a5a"
+#define GRAY8 "#9e9e9e"
+#define GRAY9 "#bcbcbc"
+#define GRAY10 "#d0d0d0"
+
+#define BLACK "#000000"
+#define WHITE "#FFFFFF"
 #define DGRAY "#222222"
 #define GRAY  "#3a3a3a"
 #define LGRAY "#e0e0e0"
-#define WHITE "#FFFFFF"
 
-//#define RED   "#CF4F88"
 #define RED   "#CF4F88"
 #define DRED   "#870000"
 
@@ -29,18 +37,25 @@ static const Bool topbar            = True;     /* False means bottom bar */
 #define BORANGE "#ff8700"
 static const char color[NUMCOL][ColLast][8] = {
     /* border foreground background underline*/
-    { DGRAY,  "#888888",     DGRAY}, /* 0 = unselected, unoccupied */
+    { DGRAY,  GRAY8,     DGRAY}, /* 0 = unselected, unoccupied */
     { CYAN,   LGRAY,	 GRAY}, /* 1 = selected, occupied */
-    { RED,    RED,     DGREEN}, /* 2 = urgent */
+    { RED,    LGRAY,     GRAY4}, /* 2 = urgent */
     { DGRAY,  LGRAY,   DGRAY}, /* 3 = unselected, occupied */
     { DGRAY,  LGRAY,     GRAY}, /* 4 = selected, unoccupied */
-
     { DGRAY,  LGRAY,     DGRAY}, /* 5 = title */
+    { DGRAY,  GRAY4,     DGRAY}, /* 6 = SEP */
 
-    { DGRAY,  GRAY,     LGRAY}, /* 6 = NORMAL */
-    { DGRAY,  DGREEN,     BGREEN}, /* 7 = Yellow Green*/
-    { DGRAY,  DRED,     BORANGE}, /* 8 = Orangle */
+    { DGRAY,  GRAY10,    GRAY4}, /* 7 = \x08=\b */
+    { DGRAY,  GRAY10,    GRAY4}, /* 8 = \x09=\t */
+    { DGRAY,  GRAY10,    GRAY4}, /* 9 = \x0a=\n */
+    { DGRAY,  GRAY10,    GRAY4}, /* 10 = \x0b=\v */
+    { DGRAY,  GRAY10,    GRAY4}, /* 11 = \x0c=\f */
+    { DGRAY,  GRAY10,    GRAY4}, /* 12 = \x0d=\r */
 
+    { DGRAY,  GRAY9,    GRAY4}, /* 13 = \x0e=scroll percentage */
+    { DGRAY,  GRAY10,   GRAY4}, /* 14 = \x0f SEP*/
+    { DGRAY,  GRAY2,    GRAY10}, /*15 = \x10 line info */
+    { DGRAY,  BLACK,     LGRAY} /* 16 = \x11 Orangle */
 };
 
 /* tagging */
@@ -92,14 +107,15 @@ static const char *termcmd[]  = { "urxvt", NULL };
 static const char *rangercmd[]  = { "urxvt", "-e", "ranger" };
 static const char *weechatcmd[]  = { "urxvt", "-e", "weechat-curses" };
 static const char *surfcmd[]  = { "firefox", NULL };
+static const char *killxcmd[]  = { "urxvt", "-e", "pkill", "firefox" };
 /* audio volume */
 static const char *voltogglecmd[]  = { "amixer", "-q", "sset", "Master", "toggle", NULL };
 static const char *voldowncmd[]    = { "amixer", "-q", "sset", "Master", "1-", "unmute", NULL };
 static const char *volupcmd[]      = { "amixer", "-q", "sset", "Master", "1+", "unmute", NULL };
 
-static const char *cmustogglecmd[] = { "mpc", "toggle", "-q", NULL };
-static const char *cmusprevcmd[]   = { "mpc", "prev", "-q", NULL };
-static const char *cmusnextcmd[]   = { "mpc", "next", "-q", NULL };
+static const char *cmustogglecmd[] = { "ncmpcpp", "toggle", NULL };
+static const char *cmusprevcmd[]   = { "ncmpcpp", "prev", NULL };
+static const char *cmusnextcmd[]   = { "ncmpcpp", "next", NULL };
 
 static Key keys[] = {
     /* modifier                     key        function        argument */
@@ -107,7 +123,8 @@ static Key keys[] = {
     { MODKEY,                       XK_p,      spawn,          {.v = rangercmd } },
     { MODKEY,			    XK_Return, spawn,          {.v = termcmd } },
     { MODKEY,			    XK_f,      spawn,          {.v = surfcmd } },
-    { MODKEY|Mod1Mask,		    XK_c,       spawn,         {.v = weechatcmd}},
+    { MODKEY|Mod1Mask,		    XK_c,      spawn,	       {.v = weechatcmd}},
+    { MODKEY|ShiftMask,             XK_q,      spawn,          {.v = killxcmd} },
     { MODKEY,                       XK_n,      togglebar,      {-1} },
     { MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
     { MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
@@ -146,7 +163,7 @@ static Key keys[] = {
     TAGKEYS(                        XK_3,                      2)
     TAGKEYS(                        XK_4,                      3)
     TAGKEYS(                        XK_5,                      4)
-    { MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+    //{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 };
 
 /* button definitions */

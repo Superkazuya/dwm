@@ -6,7 +6,7 @@ include config.mk
 SRC = dwm.c
 OBJ = ${SRC:.c=.o}
 
-all: options dwm
+all: options dwm 
 
 options:
 	@echo dwm build options:

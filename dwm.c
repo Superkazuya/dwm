@@ -17,9 +17,7 @@
  * client.
  *
  * Keys and tagging rules are organized as arrays and defined in config.h.
- *
- * To understand everything else, start reading main().
- */
+ * * To understand everything else, start reading main().  */
 #include <errno.h>
 #include <locale.h>
 #include <stdarg.h>
@@ -50,7 +48,7 @@
 #define MAX(A, B)               ((A) > (B) ? (A) : (B))
 #define MIN(A, B)               ((A) < (B) ? (A) : (B))
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
-#define NUMCOL                  9
+#define NUMCOL                  17
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << NTAGS) - 1)
@@ -184,7 +182,7 @@ static void movestack(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *);
 static void propertynotify(XEvent *e);
-static void quit(const Arg *arg);
+//static void quit(const Arg *arg);
 static Monitor *recttomon(int x, int y, int w, int h);
 static void resize(Client *c, int x, int y, int w, int h, Bool interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
@@ -232,7 +230,7 @@ static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
 
-/* variables */
+/*global variables */
 static const char broken[] = "broken";
 static char stext[256];
 static int screen;
@@ -752,6 +750,7 @@ drawbar(Monitor *m) {
         dc.w = TEXTW(buf);
         col = dc.color[urg & 1 << i ? 2 : ((m->tagset & 1 << i ? 1 : 0)+(occ & 1 << i ? 3 : 0))];
         drawtext(buf, col, True);
+	/*
         if(m->tagset & 1 << i) {
             XSetForeground(dpy, dc.gc, getcolor(ACTIVE).pixel);
             XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, 3);
@@ -760,12 +759,13 @@ drawbar(Monitor *m) {
             XSetForeground(dpy, dc.gc, getcolor("#666666").pixel);
             XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, 3);
         }
+	*/
         dc.x += dc.w;
     }
     x = dc.x;
-    dc.w = TEXTW(stext)+20;
+    dc.w = TEXTW(stext)-5*8;
     dc.x = m->ww - dc.w;
-    if(dc.x < x) {
+    if(dc.x < x) { //too long
         dc.x = x;
         dc.w = m->ww - x;
     }
@@ -778,7 +778,8 @@ drawbar(Monitor *m) {
 	  strcpy(buf, m->sel->name);
 	else 
 	  strcpy(buf, "未知のエリア");
-        len = TEXTW(buf);
+        if((len = TEXTW(buf)) > 1024)
+	  len = 1024;
 
         dc.x = x;
         drawtext(NULL, dc.color[0], False);
@@ -800,71 +801,30 @@ drawbars(void) {
 
 void
 drawstext(char *text) {
-  //Format Control : two chars : color and underline
     Bool first=True;
     char *buf = text, *ptr = buf, c = 1;
     XftColor *col = dc.color[5];
-    XftColor previous_col[ColLast] ; 
     int i, ox = dc.x;
-    int UD = 0;
-    //previous_col[ColBG] = col[ColBG];
 
     while(*ptr) {
-        for(i = 0; *ptr < 0 || *ptr > NUMCOL; i++, ptr++);
+      //skip all non-ctrl characters
+        for(i = 0; *ptr < 0 || *ptr > NUMCOL; i++, ptr++); //i: non-ctrl character counter
         if(!*ptr) break;
         c=*ptr;
         *ptr=0;
         if(i) {
-            drawtext(buf, col, first);
-	    if(UD)
-	    {
-	      if(UD == 2)
-		XSetForeground(dpy, dc.gc, getcolor(ACTIVE).pixel);
-	      else
-		XSetForeground(dpy, dc.gc, getcolor(DGRAY).pixel);
-	    }
-	    else
-		XSetForeground(dpy, dc.gc, getcolor(DGRAY).pixel);
-	    XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, 3);
-            //dc.x += textnw(buf, i) + textnw(&c,1);
+            drawtext(buf, col, first); //DO NOT COUNT CTRL CHARACTERS'S LEN
             dc.x += textnw(buf, i);
             if(first) dc.x += (dc.font.ascent + dc.font.descent) / 2;
             first = False;
-        } else if(first) {
-            ox = dc.x += textnw(&c,1);
         }
-        *ptr++ = c;
-	previous_col[ColBG] = col[ColBG];
+        *ptr = c;
         col = dc.color[c-1];
-	previous_col[ColFG] = col[ColBG];
-
-	if(*ptr > 0 && *ptr < 9)
-	  UD = *ptr++;
-	else
-	  UD = 0;
-	if(UD != 6)
-	{
-	  drawtext(SEP, previous_col, True);
-	  XSetForeground(dpy, dc.gc, getcolor(DGRAY).pixel);
-	  XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, 3);
-	  dc.x += 19;
-	}
-
-        buf = ptr;
+        buf = ++ptr;
     }
 
-    //if(!first) dc.x -= (dc.font.ascent+dc.font.descent) / 2;
+    if(!first) dc.x -= (dc.font.ascent+dc.font.descent) / 2;
     drawtext(buf, col, True);
-    if(UD)
-    {
-      if(UD == 2)
-	XSetForeground(dpy, dc.gc, getcolor(ACTIVE).pixel);
-      else
-	XSetForeground(dpy, dc.gc, getcolor(DGRAY).pixel);
-    }
-    else
-	XSetForeground(dpy, dc.gc, getcolor(DGRAY).pixel);
-    XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, 3);
     dc.x = ox;
 }
 
@@ -881,7 +841,7 @@ drawtext(const char *text, XftColor col[ColLast], Bool pad) {
     //olen = MIN(strlen(text), 81);
     olen = strlen(text);
     h = pad ? dc.font.ascent + dc.font.descent : 0;
-    y = dc.y + ((dc.h + dc.font.ascent - dc.font.descent) / 2)+2;
+    y = dc.y + ((dc.h + dc.font.ascent - dc.font.descent) / 2);
     x = dc.x + (h / 2);
     /* shorten text if necessary */
     for(len = MIN(olen, sizeof buf); len && textnw(text, len) > dc.w - h; len--);
@@ -1463,10 +1423,12 @@ propertynotify(XEvent *e) {
     }
 }
 
+/*
 void
 quit(const Arg *arg) {
     running = False;
 }
+*/
 
 Monitor *
 recttomon(int x, int y, int w, int h) {
