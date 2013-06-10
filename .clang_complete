@@ -6,3 +6,4 @@
 -DVERSION="6.1-custom"
 -std=c99
 -Wall
+-DDEBUG

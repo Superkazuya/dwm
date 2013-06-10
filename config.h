@@ -7,8 +7,10 @@ static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const Bool showbar           = True;     /* False means no bar */
 static const Bool topbar            = True;     /* False means bottom bar */
-#define SEP_NORMAL_L "\u2B82"
-#define SEP_HOLLOW_L "\u2B83"
+#define H_ARROW_L "\u2B83"
+#define H_ARROW_R "\u2B81"
+#define S_ARROW_L "\u2B82"
+#define S_ARROW_R "\u2B80"
 
 #define CYAN  "#1793D0"
 #define DBLUE "#31658c"

@@ -723,10 +723,46 @@ dirtomon(int dir) {
 }
 
 void
+drawarrow_R(XftColor* col_prev, XftColor* col)
+{
+  XftDraw *d;
+  dc.w = textnw(S_ARROW_R, 3);
+  XSetForeground(dpy, dc.gc, col[ColBG].pixel);
+  XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, dc.h);
+  d = XftDrawCreate(dpy, dc.drawable, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen));
+  if(col_prev[ColBG].color.alpha == col[ColBG].color.alpha 
+      && col_prev[ColBG].color.red == col[ColBG].color.red 
+      && col_prev[ColBG].color.green == col[ColBG].color.green 
+      && col_prev[ColBG].color.blue == col[ColBG].color.blue) //same color
+    XftDrawStringUtf8(d, &dc.color[0][ColFG], dc.font.xfont, dc.x, dc.y+(dc.h + dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)H_ARROW_R, dc.w);
+  else
+    XftDrawStringUtf8(d, &col_prev[ColBG], dc.font.xfont, dc.x, dc.y+(dc.h + dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)S_ARROW_R, dc.w);
+  XftDrawDestroy(d);
+  dc.x += dc.w;
+}
+
+void
+drawarrow_L(XftColor* col_prev, XftColor* col)
+{
+  //assert(col_prev != col);
+  XftDraw *d;
+  //dc.w = TEXTW(S_ARROW_L);
+  dc.w = textnw(S_ARROW_R, 3);
+  XSetForeground(dpy, dc.gc, col_prev[ColBG].pixel);
+  //XSetForeground(dpy, dc.gc, (&dc.color[1][ColBG])->pixel);
+  XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, dc.h);
+  d = XftDrawCreate(dpy, dc.drawable, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen));
+  XftDrawStringUtf8(d, &col[ColBG], dc.font.xfont, dc.x, dc.y+(dc.h +dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)S_ARROW_L, dc.w);
+  XftDrawDestroy(d);
+  dc.x += dc.w;
+  //printf("%d, %d.\n", dc.w, strlen(S_ARROW_L));
+}
+
+void
 drawbar(Monitor *m) {
     int x;
     unsigned int i, occ = 0, urg = 0;
-    XftColor *col;
+    XftColor *col = NULL, *col_prev;
     Client *c;
 
     for(c = m->clients; c; c = c->next) {
@@ -734,6 +770,7 @@ drawbar(Monitor *m) {
         if(c->isurgent)
             urg |= c->tags;
     }
+
     dc.x = 0;
     for(i = 0; i < NTAGS; i++) {
         char buf[5];
@@ -747,8 +784,12 @@ drawbar(Monitor *m) {
 	else
 	  sprintf(buf, "%s", tags[i]);
 
-        dc.w = TEXTW(buf);
+	col_prev = col;
         col = dc.color[urg & 1 << i ? 2 : ((m->tagset & 1 << i ? 1 : 0)+(occ & 1 << i ? 3 : 0))];
+	if(i != 0)
+	  drawarrow_R(col_prev, col);
+
+        dc.w = TEXTW(buf);
         drawtext(buf, col, True);
 	/*
         if(m->tagset & 1 << i) {
@@ -762,8 +803,11 @@ drawbar(Monitor *m) {
 	*/
         dc.x += dc.w;
     }
+    col_prev = col;
+    col = dc.color[5];
+    drawarrow_R(col_prev, col);
     x = dc.x;
-    dc.w = TEXTW(stext)-5*8;
+    dc.w = TEXTW(stext);// + 2*textnw(S_ARROW_L, 3);
     dc.x = m->ww - dc.w;
     if(dc.x < x) { //too long
         dc.x = x;
@@ -803,8 +847,10 @@ void
 drawstext(char *text) {
     Bool first=True;
     char *buf = text, *ptr = buf, c = 1;
-    XftColor *col = dc.color[5];
+    XftColor *col = dc.color[0];
+    XftColor *col_prev = col;
     int i, ox = dc.x;
+    int ow = dc.w;
 
     while(*ptr) {
       //skip all non-ctrl characters
@@ -813,17 +859,21 @@ drawstext(char *text) {
         c=*ptr;
         *ptr=0;
         if(i) {
-            drawtext(buf, col, first); //DO NOT COUNT CTRL CHARACTERS'S LEN
-            dc.x += textnw(buf, i);
-            if(first) dc.x += (dc.font.ascent + dc.font.descent) / 2;
-            first = False;
+	  drawtext(buf, col, first); //DO NOT COUNT CTRL CHARACTERS'S LEN
+	  dc.x += textnw(buf, i);
+	  if(first) dc.x += (dc.font.ascent + dc.font.descent) / 2;
+	  first = False;
         }
         *ptr = c;
+	col_prev = col;
         col = dc.color[c-1];
         buf = ++ptr;
+	drawarrow_L(col_prev, col);
+	dc.w = ow;
     }
-
     if(!first) dc.x -= (dc.font.ascent+dc.font.descent) / 2;
+    drawarrow_L(col_prev, col);
+    dc.w = ow;
     drawtext(buf, col, True);
     dc.x = ox;
 }

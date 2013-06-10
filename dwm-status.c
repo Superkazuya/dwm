@@ -13,7 +13,7 @@
 //#define MPD_PORT     6600
 //#define MPD_TIMEOUT  1000
 //#define TIME_FORMAT  "\x09%a \x07 %d/%m/%Y  \x02%H:\x01\x06%M"
-#define TIME_FORMAT  " \x07\u2b82\x0e %a %d/%m/%Y \x0f\u2b82 \x10%H:%M"
+#define TIME_FORMAT  " \x0f %a %d/%m/%Y \x10%H:%M "
 //#define WIFI	      "wlsp02"
 #define BATTERY	      "/sys/class/power_supply/BAT1/capacity"
 
@@ -25,7 +25,7 @@ void print_battery(char * buffer)
   assert((bat_file = fopen(BATTERY,"r")) != 0);
   fscanf(bat_file, "%d\n", &bat);
   fclose(bat_file);
-  sprintf(bat_char, " \u2B83 %d%%", bat);
+  sprintf(bat_char, "\u2B83 %d%%", bat);
   strcat(buffer, bat_char);
 }
 
@@ -63,14 +63,11 @@ void print_vol(char * buffer)
   snd_mixer_elem_t* mas_mixer = snd_mixer_find_selem(handle, mute_info);
   snd_mixer_selem_get_playback_switch(mas_mixer, SND_MIXER_SCHN_MONO, &mute); /* get mute state */
 
-  if(mute == 0)
-    strcat(buffer, "\x01");
-  else
-    strcat(buffer, " \x01\u2b83 ");
+  if(mute != 0)
+    strcat(buffer, "\u2b83 ");
   realvol = (vol*100)/max;
-  sprintf(vol_char, "%d", realvol);
+  sprintf(vol_char, "%d%% ", realvol);
   strcat(buffer, vol_char);
-  strcat(buffer, "%");
 
   if(vol_info)
     snd_mixer_selem_id_free(vol_info);
@@ -105,7 +102,6 @@ int main()
     print_vol(buffer);
     print_battery(buffer);
     print_date(buffer);
-    printf(buffer);
     fflush(stdout);
     XStoreName(dpy, root, buffer);
     XFlush(dpy);
