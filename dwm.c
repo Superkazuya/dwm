@@ -37,6 +37,9 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xinerama.h>
 #include <X11/Xft/Xft.h>
+#include <pango/pango.h>
+#include <pango/pangoxft.h>
+#include <pango/pango-font.h>
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -45,8 +48,10 @@
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
 #define ISVISIBLE(C)            ((C->tags & C->mon->tagset))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
+#ifndef MAX
 #define MAX(A, B)               ((A) > (B) ? (A) : (B))
 #define MIN(A, B)               ((A) < (B) ? (A) : (B))
+#endif
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define NUMCOL                  17
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -100,11 +105,14 @@ typedef struct {
     XftColor color[NUMCOL][3];
     Drawable drawable;
     GC gc;
+    PangoContext *pgc;
+    PangoLayout *plo;
+    PangoFontDescription *pfd;
     struct {
         int ascent;
         int descent;
         int height;
-        XftFont *xfont;
+        //XftFont *xfont;
     } font;
 } DC; /* draw context */
 
@@ -734,9 +742,15 @@ drawarrow_R(XftColor* col_prev, XftColor* col)
       && col_prev[ColBG].color.red == col[ColBG].color.red 
       && col_prev[ColBG].color.green == col[ColBG].color.green 
       && col_prev[ColBG].color.blue == col[ColBG].color.blue) //same color
-    XftDrawStringUtf8(d, &dc.color[0][ColFG], dc.font.xfont, dc.x, dc.y+(dc.h + dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)H_ARROW_R, dc.w);
+  {
+    pango_layout_set_text(dc.plo, H_ARROW_R, dc.w);
+    pango_xft_render_layout(d, &dc.color[0][ColFG], dc.plo, dc.x * PANGO_SCALE, dc.y * PANGO_SCALE);
+  }
   else
-    XftDrawStringUtf8(d, &col_prev[ColBG], dc.font.xfont, dc.x, dc.y+(dc.h + dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)S_ARROW_R, dc.w);
+  {
+    pango_layout_set_text(dc.plo, S_ARROW_R, dc.w);
+    pango_xft_render_layout(d, &col_prev[ColBG], dc.plo, dc.x * PANGO_SCALE, dc.y * PANGO_SCALE);
+  }
   XftDrawDestroy(d);
   dc.x += dc.w;
 }
@@ -744,17 +758,16 @@ drawarrow_R(XftColor* col_prev, XftColor* col)
 void
 drawarrow_L(XftColor* col_prev, XftColor* col)
 {
-  //assert(col_prev != col);
   XftDraw *d;
-  //dc.w = TEXTW(S_ARROW_L);
-  dc.w = textnw(S_ARROW_R, 3);
+  //dc.w = textnw(S_ARROW_R, 5);
+  dc.x += 8;
   XSetForeground(dpy, dc.gc, col_prev[ColBG].pixel);
-  //XSetForeground(dpy, dc.gc, (&dc.color[1][ColBG])->pixel);
   XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, dc.h);
   d = XftDrawCreate(dpy, dc.drawable, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen));
-  XftDrawStringUtf8(d, &col[ColBG], dc.font.xfont, dc.x, dc.y+(dc.h +dc.font.ascent - dc.font.descent) / 2, (XftChar8 *)S_ARROW_L, dc.w);
+  pango_layout_set_text(dc.plo, S_ARROW_L, dc.w);
+  pango_xft_render_layout(d, &col[ColBG], dc.plo, dc.x * PANGO_SCALE, dc.y * PANGO_SCALE);
   XftDrawDestroy(d);
-  dc.x += dc.w;
+  dc.x += 8;
   //printf("%d, %d.\n", dc.w, strlen(S_ARROW_L));
 }
 
@@ -845,7 +858,6 @@ drawbars(void) {
 
 void
 drawstext(char *text) {
-    Bool first=True;
     char *buf = text, *ptr = buf, c = 1;
     XftColor *col = dc.color[0];
     XftColor *col_prev = col;
@@ -859,29 +871,25 @@ drawstext(char *text) {
         c=*ptr;
         *ptr=0;
         if(i) {
-	  drawtext(buf, col, first); //DO NOT COUNT CTRL CHARACTERS'S LEN
+	  drawtext(buf, col, 0); //DO NOT COUNT CTRL CHARACTERS'S LEN
 	  dc.x += textnw(buf, i);
-	  if(first) dc.x += (dc.font.ascent + dc.font.descent) / 2;
-	  first = False;
         }
         *ptr = c;
 	col_prev = col;
         col = dc.color[c-1];
         buf = ++ptr;
+	dc.x += 8;
 	drawarrow_L(col_prev, col);
 	dc.w = ow;
     }
-    if(!first) dc.x -= (dc.font.ascent+dc.font.descent) / 2;
-    drawarrow_L(col_prev, col);
-    dc.w = ow;
-    drawtext(buf, col, True);
+    drawtext(buf, col, 0);
     dc.x = ox;
 }
 
 void
 drawtext(const char *text, XftColor col[ColLast], Bool pad) {
     char buf[256];
-    int i, x, y, h, len, olen;
+    int i, x, h, len, olen;
     XftDraw *d;
 
     XSetForeground(dpy, dc.gc, col[ColBG].pixel);
@@ -890,9 +898,10 @@ drawtext(const char *text, XftColor col[ColLast], Bool pad) {
         return;
     //olen = MIN(strlen(text), 81);
     olen = strlen(text);
-    h = pad ? dc.font.ascent + dc.font.descent : 0;
-    y = dc.y + ((dc.h + dc.font.ascent - dc.font.descent) / 2);
+    //h = pad ? dc.font.ascent + dc.font.descent : 0;
+    h = dc.font.ascent+dc.font.descent;
     x = dc.x + (h / 2);
+    //int y = (dc.font.descent - dc.font.ascent)/2+dc.y;
     /* shorten text if necessary */
     for(len = MIN(olen, sizeof buf); len && textnw(text, len) > dc.w - h; len--);
     if(!len)
@@ -901,7 +910,9 @@ drawtext(const char *text, XftColor col[ColLast], Bool pad) {
     if(len < olen)
         for(i = len; i && i > len - 3; buf[--i] = '.');
     d = XftDrawCreate(dpy, dc.drawable, DefaultVisual(dpy, screen), DefaultColormap(dpy,screen));
-    XftDrawStringUtf8(d, &col[ColFG], dc.font.xfont, x, y, (XftChar8 *) buf, len);
+    pango_layout_set_text(dc.plo, text, len);
+    pango_xft_render_layout(d, &col[ColFG], dc.plo, x * PANGO_SCALE, dc.y*PANGO_SCALE);
+    //printf("%d, %d, %d\n", dc.y, dc.font.height, dc.font.ascent);
     XftDrawDestroy(d);
 }
 
@@ -1159,14 +1170,21 @@ incnmaster(const Arg *arg) {
 }
 
 void
-initfont(const char *fontstr) {
-    if(!(dc.font.xfont = XftFontOpenName(dpy,screen,fontstr))
-    && !(dc.font.xfont = XftFontOpenName(dpy,screen,"fixed")))
-        die("error, cannot load font: '%s'\n", fontstr);
+initfont(const char *fontstr) 
+{
+   PangoFontMetrics *metrics;
+   dc.pgc = pango_xft_get_context(dpy, screen);
+   dc.pfd = pango_font_description_from_string(fontstr);
 
-    dc.font.ascent = dc.font.xfont->ascent;
-    dc.font.descent = dc.font.xfont->descent;
-    dc.font.height = dc.font.ascent + dc.font.descent;
+   metrics = pango_context_get_metrics(dc.pgc, dc.pfd, pango_language_from_string(setlocale(LC_CTYPE, "")));
+   dc.font.ascent = pango_font_metrics_get_ascent(metrics) / PANGO_SCALE;
+   dc.font.descent = pango_font_metrics_get_descent(metrics) / PANGO_SCALE;
+
+   pango_font_metrics_unref(metrics);
+
+   dc.plo = pango_layout_new(dc.pgc);
+   pango_layout_set_font_description(dc.plo, dc.pfd);
+   dc.font.height = dc.font.ascent + dc.font.descent;
 }
 
 static Bool
@@ -1754,7 +1772,7 @@ setup(void) {
     initfont(font);
     sw = DisplayWidth(dpy, screen);
     sh = DisplayHeight(dpy, screen);
-    bh = dc.h = dc.font.height + 3;
+    bh = dc.h = dc.font.height;
     updategeom();
     /* init atoms */
     wmatom[WMProtocols] = XInternAtom(dpy, "WM_PROTOCOLS", False);
@@ -1852,9 +1870,15 @@ tagmon(const Arg *arg) {
 
 int
 textnw(const char *text, unsigned int len) {
+  /*
     XGlyphInfo ext;
     XftTextExtentsUtf8(dpy, dc.font.xfont, (XftChar8 *)text, len, &ext);
     return ext.xOff;
+    */
+ PangoRectangle r;
+ pango_layout_set_text(dc.plo, text, len);
+ pango_layout_get_extents(dc.plo, &r, 0);
+ return r.width / PANGO_SCALE;
 }
 
 void

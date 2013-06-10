@@ -2,7 +2,7 @@
 
 /* appearance */
 //static const char font[]            = "WenQuanYi Micro Hei for Powerline-10";
-static const char font[]            = "Pragmata TT for Powerline-10";
+static const char font[]            = "Pragmata TT for Powerline 10";
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const Bool showbar           = True;     /* False means no bar */

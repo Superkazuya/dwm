@@ -13,7 +13,7 @@
 //#define MPD_PORT     6600
 //#define MPD_TIMEOUT  1000
 //#define TIME_FORMAT  "\x09%a \x07 %d/%m/%Y  \x02%H:\x01\x06%M"
-#define TIME_FORMAT  " \x0f %a %d/%m/%Y \x10%H:%M "
+#define TIME_FORMAT  " \x0f %a %d/%m/%Y\x10 %H:%M"
 //#define WIFI	      "wlsp02"
 #define BATTERY	      "/sys/class/power_supply/BAT1/capacity"
 

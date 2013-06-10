@@ -17,8 +17,8 @@ XFTINC = -I/usr/include/freetype2
 XFTLIB = -lXft
 
 # includes and libs
-INCS = ${X11INC} ${XFTINC}
-LIBS = ${X11LIB} ${XFTLIB} ${XINERAMALIB}
+INCS = ${X11INC} ${XFTINC}  `pkg-config --cflags xft pango pangoxft` 
+LIBS = ${X11LIB} ${XFTLIB} ${XINERAMALIB} `pkg-config --libs xft pango pangoxft`
 
 # flags
 CFLAGS   = -std=c99 -Wall -pedantic -Os ${INCS} -DVERSION=\"${VERSION}\"
