@@ -190,7 +190,7 @@ static void movestack(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *);
 static void propertynotify(XEvent *e);
-//static void quit(const Arg *arg);
+static void quit(const Arg *arg);
 static Monitor *recttomon(int x, int y, int w, int h);
 static void resize(Client *c, int x, int y, int w, int h, Bool interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
@@ -792,8 +792,8 @@ drawbar(Monitor *m) {
             if(c->tags & 1 << i)
                 n++;
         }
-	if(n)
-	  sprintf(buf, "%s[%d]", tags[i], n);
+	if(n > 1)
+	  sprintf(buf, "%s::%X", tags[i], n);
 	else
 	  sprintf(buf, "%s", tags[i]);
 
@@ -820,7 +820,7 @@ drawbar(Monitor *m) {
     col = dc.color[5];
     drawarrow_R(col_prev, col);
     x = dc.x;
-    dc.w = TEXTW(stext);// + 2*textnw(S_ARROW_L, 3);
+    dc.w = TEXTW(stext) + 2*16;
     dc.x = m->ww - dc.w;
     if(dc.x < x) { //too long
         dc.x = x;
@@ -1491,12 +1491,11 @@ propertynotify(XEvent *e) {
     }
 }
 
-/*
 void
 quit(const Arg *arg) {
-    running = False;
+  system("pkill x");
+//running = False;
 }
-*/
 
 Monitor *
 recttomon(int x, int y, int w, int h) {

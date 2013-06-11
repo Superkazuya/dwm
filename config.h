@@ -40,15 +40,17 @@ static const Bool topbar            = True;     /* False means bottom bar */
 static const char color[NUMCOL][ColLast][8] = {
     /* border foreground background underline*/
     { DGRAY,  GRAY8,     DGRAY}, /* 0 = unselected, unoccupied */
-    { CYAN,   LGRAY,	 GRAY}, /* 1 = selected, occupied */
-    { RED,    LGRAY,     GRAY4}, /* 2 = urgent */
+    { CYAN,   DGREEN,	 BGREEN}, /* 1 = selected, occupied */
+    { RED,    DRED,     BORANGE}, /* 2 = urgent Visual*/
     { DGRAY,  LGRAY,   DGRAY}, /* 3 = unselected, occupied */
-    { DGRAY,  LGRAY,     GRAY}, /* 4 = selected, unoccupied */
+    { DGRAY,  DGREEN,     BGREEN}, /* 4 = selected, unoccupied */
+
     { DGRAY,  LGRAY,     DGRAY}, /* 5 = title */
     { DGRAY,  GRAY4,     DGRAY}, /* 6 = SEP */
 
     { DGRAY,  GRAY10,    GRAY4}, /* 7 = \x08=\b */
     { DGRAY,  GRAY10,    GRAY4}, /* 8 = \x09=\t */
+
     { DGRAY,  GRAY10,    GRAY4}, /* 9 = \x0a=\n */
     { DGRAY,  GRAY10,    GRAY4}, /* 10 = \x0b=\v */
     { DGRAY,  GRAY10,    GRAY4}, /* 11 = \x0c=\f */
@@ -62,8 +64,8 @@ static const char color[NUMCOL][ColLast][8] = {
 
 /* tagging */
 #define NTAGS 4
-const char tags[NTAGS][10] = {"term", "web", "dev", "misc"};
-//const char underline_color[NTAGS][8] = {"#EA5800", "","",""};
+//const char tags[NTAGS][10] = {"term", "web", "dev", "misc"};
+const char tags[NTAGS][10] = {"Foo", "Web", "Dev", "Bar"};
 
 static const Rule rules[] = {
     /* xprop(1):
@@ -109,7 +111,7 @@ static const char *termcmd[]  = { "urxvt", NULL };
 static const char *rangercmd[]  = { "urxvt", "-e", "ranger" };
 static const char *weechatcmd[]  = { "urxvt", "-e", "weechat-curses" };
 static const char *surfcmd[]  = { "firefox", NULL };
-static const char *killxcmd[]  = { "urxvt", "-e", "pkill", "firefox" };
+//static const char *killxcmd[]  = { "bash", "-c", "'pkill firefox'" };
 /* audio volume */
 static const char *voltogglecmd[]  = { "amixer", "-q", "sset", "Master", "toggle", NULL };
 static const char *voldowncmd[]    = { "amixer", "-q", "sset", "Master", "1-", "unmute", NULL };
@@ -126,7 +128,8 @@ static Key keys[] = {
     { MODKEY,			    XK_Return, spawn,          {.v = termcmd } },
     { MODKEY,			    XK_f,      spawn,          {.v = surfcmd } },
     { MODKEY|Mod1Mask,		    XK_c,      spawn,	       {.v = weechatcmd}},
-    { MODKEY|ShiftMask,             XK_q,      spawn,          {.v = killxcmd} },
+    //{ MODKEY|ShiftMask,             XK_q,      spawn,          {.v = killxcmd} },
+    { MODKEY|ShiftMask,             XK_q,      quit,          {0} },
     { MODKEY,                       XK_n,      togglebar,      {-1} },
     { MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
     { MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
