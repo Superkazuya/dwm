@@ -81,6 +81,7 @@ static const Rule rules[] = {
     { "feh",	NULL,	     NULL       , 1 << 3,       False,        0 },
     { "matlab 2012a",	NULL,	     NULL       , 1 << 2,       False,        0 },
     { "wine",	NULL,	     NULL       , 1 << 3,       True,        -1 },
+    { "zathura",NULL,	     NULL       , 1 << 3,       False,        -1 },
     //{ "VBoxSDL", "VBoxSDL",   NULL,        0,            True,        -1 },
 };
 

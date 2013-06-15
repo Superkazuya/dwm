@@ -786,13 +786,13 @@ drawbar(Monitor *m) {
 
     dc.x = 0;
     for(i = 0; i < NTAGS; i++) {
-        char buf[5];
+        char buf[8];
         int n = 0;
         for(c = m->clients; c; c = c->next) {
             if(c->tags & 1 << i)
                 n++;
         }
-	if(n > 1)
+	if(n)
 	  sprintf(buf, "%s::%X", tags[i], n);
 	else
 	  sprintf(buf, "%s", tags[i]);

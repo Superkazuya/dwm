@@ -21,7 +21,7 @@ options:
 ${OBJ}: config.h config.mk
 
 dwm: ${OBJ}
-	@echo CC -o $@ -ggdb
+	@echo CC -o $@ 
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
